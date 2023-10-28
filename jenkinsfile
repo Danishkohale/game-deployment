@@ -1,0 +1,59 @@
+pipeline{
+    agent any
+
+
+        
+stages{
+            
+        
+        stage("SCM"){
+            steps{
+                
+                  sh "rm -rf game-deployment"
+                  sh "git clone https://github.com/Danishkohale/game-deployment.git"
+            }
+        }
+
+        stage("build"){
+            steps{
+                
+                script{
+                    sh "docker build -t danikohale/gameserver:v1 . -f game-deployment/Dockerfile/Dockerfile"
+                }
+                
+            }
+        }
+
+        stage("Push Docker Image") {
+            steps {
+                 // Push the Docker image to the registry
+   withCredentials([usernamePassword(credentialsId: 'DockerHub', passwordVariable: 'dockerhub_passwd', usernameVariable: 'dockerhub_username')]) {
+    // some block
+}
+                   
+               sh "docker login -u ${env.dockerhub_username} -p ${env.dockerhub_passwd}"
+                   
+                   }
+        
+                 
+                }
+             
+        
+        
+   
+
+        stage("deploy")
+        {
+            steps{
+                script{
+                      sh "docker stop gameserver:v1 || true"
+                      sh "docker rm gameserver:v1 || true"
+                     //sh'Docker image push danikohale/gameserver:v1'
+                     sh "docker run -itd -p 8000:80 --name gameserver  danikohale/gameserver:v1"
+                }
+            }
+        }
+    }
+
+}
+
